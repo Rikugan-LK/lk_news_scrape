@@ -8,17 +8,17 @@
     "dailynewslk",
     "divainalk",
     "economynextcom",
+    "lankadeepalk",
     "newsfirstlk"
   ],
   "newspaper_to_n": {
-    "virakesarilk": 436,
+    "virakesarilk": 433,
     "tamilmirrorlk": 222,
-    "adalk": 114,
+    "adalk": 117,
     "dailyftlk": 107,
     "islandlk": 59,
     "colombotelegraphcom": 15,
     "bbccomsinhala": 14,
-    "dbsjeyarajcom": 5,
-    "lankadeepalk": 1
+    "dbsjeyarajcom": 5
   }
 }
