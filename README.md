@@ -4,7 +4,7 @@
 
 ## 001 📄 News
 
-![LastUpdated](https://img.shields.io/badge/last_updated-2026--04--22_22:08:48-green)
+![LastUpdated](https://img.shields.io/badge/last_updated-2026--04--23_00:12:13-green)
 
 [https://github.com/nuuuwan/lk_news/tree/data/data/lk_news](https://github.com/nuuuwan/lk_news/tree/data/data/lk_news)
 
