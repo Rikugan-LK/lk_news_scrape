@@ -4,6 +4,10 @@ from typing import Generator
 from bs4 import BeautifulSoup
 from utils import WWW, Log, String, TimeFormat
 
+# Monkeypatch WWW parameters for reliability and speed
+WWW.DEFAULT_PARAMS.HEADERS['User-Agent'] = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+WWW.DEFAULT_PARAMS.T_TIMEOUT = 15
+
 from news_lk3.core.article.Article import Article
 
 MIN_ARTICLE_HTML_SIZE = 1_000
@@ -145,7 +149,9 @@ class AbstractNewsPaper(ABC):
     def parse_article_urls(cls, soup):
         import urllib.parse
         urls = []
-        domain = cls.get_newspaper_id().replace('-', '.')
+        index_url = cls.get_index_urls()[0]
+        parsed_index = urllib.parse.urlparse(index_url)
+        domain = parsed_index.netloc.replace('www.', '')
         for a in soup.find_all('a', href=True):
             url = a.get('href')
             if url.startswith('/'):
@@ -160,7 +166,8 @@ class AbstractNewsPaper(ABC):
                     '/terms', '/privacy', '/search', 'wp-login', '/feed', '/rss'
                 ]):
                     continue
-                path = url.split('/')[-1]
+                stripped_url = url.rstrip('/')
+                path = stripped_url.split('/')[-1]
                 if not path or path == '':
                     continue
                 urls.append(url)
