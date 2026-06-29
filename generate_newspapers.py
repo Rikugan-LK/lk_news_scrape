@@ -94,15 +94,48 @@ NEWSPAPERS = [
     ("VfmLk", "https://www.vfm.lk/"),
 ]
 
+# List of offline/timeout domains to move to the fallback folder
+OFFLINE_CLASSES = {
+    "ArmyLk", "EnglishLankaviewsCom", "EuthayanCom", "LankanewspapersCom", "LankapuvathLk",
+    "LankasrinewsCom", "LankatnewsCom", "LmdLk", "MawbimaLk", "NeruppuCom", "NewsradioLk",
+    "RedfmLk", "RiviraLk", "RupavahiniLk", "SannasaNet", "SarasaviyaLk", "SathhandaLk",
+    "ShaafmLk", "ShakthifmCom", "SiluminaLk", "SirasatvLk", "SithafmLk", "SiyathafmLk",
+    "SiyathanewsLk", "SlbcLk", "SlguardianOrg", "SooriyanfmLk", "SrilankamirrorCom",
+    "SundayobserverLk", "SundaytimesLk", "SunfmLk", "SwarnavahiniLk", "TamilMirrorLk",
+    "TamilnetCom", "TheleaderLk", "ThemorningLk", "TheneeCom", "ThesamnetCoUk",
+    "ThinakaranLk", "ThinakkuralLk", "TnlrocksCom", "VfmLk", "VikalpaOrg", "VimasumaCom",
+    "VirakesariLk", "VivalankaCom", "YesfmonlineCom", "YfmLk", "YoutubeCom"
+}
+
 CUSTOM_DIR = "src/news_lk3/custom_newspapers"
+FALLBACK_DIR = "src/news_lk3/custom_newspapers/fallback"
 FACTORY_PATH = "src/lk_news/NewspaperFactory.py"
 
 def generate():
-    # 1. Create missing custom newspapers
+    # Make sure fallback directory exists
+    os.makedirs(FALLBACK_DIR, exist_ok=True)
+
+    # 1. Create custom newspapers (regular or fallback)
     for name, url in NEWSPAPERS:
-        filepath = os.path.join(CUSTOM_DIR, f"{name}.py")
+        # Determine target folder
+        is_fallback = name in OFFLINE_CLASSES
+        target_dir = FALLBACK_DIR if is_fallback else CUSTOM_DIR
+        filepath = os.path.join(target_dir, f"{name}.py")
+        
+        # Remove it from old regular folder if it was moved to fallback
+        if is_fallback:
+            old_path = os.path.join(CUSTOM_DIR, f"{name}.py")
+            if os.path.exists(old_path):
+                os.remove(old_path)
+                print(f"Moved regular file to fallback: {name}")
+        else:
+            old_path = os.path.join(FALLBACK_DIR, f"{name}.py")
+            if os.path.exists(old_path):
+                os.remove(old_path)
+                print(f"Moved fallback file to regular: {name}")
+        
         if not os.path.exists(filepath):
-            print(f"Creating newspaper: {name} -> {url}")
+            print(f"Creating newspaper: {name} -> {url} (fallback={is_fallback})")
             content = f"""from news_lk3.core import AbstractNewsPaper
 
 
@@ -116,40 +149,62 @@ class {name}(AbstractNewsPaper):
             with open(filepath, "w") as f:
                 f.write(content)
 
-    # 2. Re-generate __init__.py
-    py_files = sorted(glob.glob(os.path.join(CUSTOM_DIR, "*.py")))
-    classes = []
+    # 2. Get list of all py files in CUSTOM_DIR and FALLBACK_DIR
+    reg_py_files = sorted(glob.glob(os.path.join(CUSTOM_DIR, "*.py")))
+    fb_py_files = sorted(glob.glob(os.path.join(FALLBACK_DIR, "*.py")))
+    
+    classes_reg = []
+    classes_fb = []
     
     init_content = ["# news_lk3.custom_newspapers (auto generated)", "# flake8: noqa: F401", ""]
     
-    for filepath in py_files:
+    for filepath in reg_py_files:
         filename = os.path.basename(filepath)
         if filename == "__init__.py":
             continue
-        classname = filename[:-3] # Remove .py
-        classes.append(classname)
+        classname = filename[:-3]
+        classes_reg.append(classname)
         init_content.append(f"from news_lk3.custom_newspapers.{classname} import {classname}")
+        
+    for filepath in fb_py_files:
+        filename = os.path.basename(filepath)
+        if filename == "__init__.py":
+            continue
+        classname = filename[:-3]
+        classes_fb.append(classname)
+        init_content.append(f"from news_lk3.custom_newspapers.fallback.{classname} import {classname}")
         
     init_path = os.path.join(CUSTOM_DIR, "__init__.py")
     with open(init_path, "w") as f:
         f.write("\n".join(init_content) + "\n")
     print(f"Updated {init_path}")
 
+    # Generate fallback/__init__.py
+    fb_init_content = ["# news_lk3.custom_newspapers.fallback (auto generated)", "# flake8: noqa: F401", ""]
+    for classname in classes_fb:
+        fb_init_content.append(f"from news_lk3.custom_newspapers.fallback.{classname} import {classname}")
+    fb_init_path = os.path.join(FALLBACK_DIR, "__init__.py")
+    with open(fb_init_path, "w") as f:
+        f.write("\n".join(fb_init_content) + "\n")
+    print(f"Updated {fb_init_path}")
+
     # 3. Re-generate NewspaperFactory.py
-    imports = ", ".join(classes)
-    # Format with nice lines
-    imports_formatted = ",\n                                         ".join(classes)
+    imports_list = []
+    if classes_reg:
+        imports_list.append(f"from news_lk3.custom_newspapers import (\n    " + ",\n    ".join(classes_reg) + "\n)")
+    if classes_fb:
+        imports_list.append(f"from news_lk3.custom_newspapers.fallback import (\n    " + ",\n    ".join(classes_fb) + "\n)")
+        
+    all_classes = sorted(classes_reg + classes_fb)
     
-    factory_content = f"""from news_lk3.custom_newspapers import (
-    {",\n    ".join(classes)}
-)
+    factory_content = f"""{chr(10).join(imports_list)}
 
 
 class NewspaperFactory:
     @staticmethod
     def list_all():
         return [
-            {",\n            ".join(classes)}
+            {",\n            ".join(all_classes)}
         ]
 
     @staticmethod
