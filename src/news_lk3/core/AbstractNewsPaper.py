@@ -77,20 +77,94 @@ class AbstractNewsPaper(ABC):
 
     @classmethod
     def parse_time_ut(cls, soup):
-        meta_time = soup.find("meta", {"itemprop": "datePublished"})
-        return (
-            TimeFormat(cls.get_time_raw_format())
-            .parse(meta_time.get("content").strip())
-            .ut
-        )
+        import datetime
+        from utils import Time
+        for selector in [
+            ("meta", {"property": "article:published_time"}),
+            ("meta", {"itemprop": "datePublished"}),
+            ("meta", {"name": "pubdate"}),
+            ("meta", {"name": "publish_date"}),
+            ("meta", {"name": "date"}),
+            ("meta", {"property": "og:pubdate"}),
+        ]:
+            meta = soup.find(selector[0], selector[1])
+            if meta and meta.get("content"):
+                try:
+                    content = meta.get("content").strip()
+                    cleaned = content.replace('T', ' ').split('+')[0].split('Z')[0].strip()
+                    if len(cleaned) > 19:
+                        cleaned = cleaned[:19]
+                    return TimeFormat(cls.get_time_raw_format()).parse(cleaned).ut
+                except Exception:
+                    try:
+                        cleaned = content.split('+')[0].split('Z')[0].strip()
+                        if 'T' in content:
+                            dt = datetime.datetime.fromisoformat(cleaned)
+                        else:
+                            dt = datetime.datetime.strptime(cleaned, "%Y-%m-%d %H:%M:%S")
+                        return int(dt.timestamp())
+                    except Exception:
+                        pass
+        return Time.now().ut
 
     @classmethod
     def parse_title(cls, soup):
-        raise NotImplementedError
+        # 1. Check og:title meta tag
+        meta_title = soup.find("meta", {"property": "og:title"})
+        if meta_title and meta_title.get("content"):
+            return meta_title.get("content").strip()
+        # 2. Check twitter:title meta tag
+        tw_title = soup.find("meta", {"name": "twitter:title"})
+        if tw_title and tw_title.get("content"):
+            return tw_title.get("content").strip()
+        # 3. Find first h1
+        h1 = soup.find("h1")
+        if h1:
+            return h1.text.strip()
+        # 4. Fallback to page title
+        if soup.title:
+            return soup.title.text.strip()
+        return "Untitled Article"
 
     @classmethod
     def parse_body_lines(cls, soup):
-        raise NotImplementedError
+        import re
+        # Find the main article container or collect all <p> tags
+        article = soup.find("article") or soup.find("div", {"class": re.compile(r"post-content|entry-content|article-body|story-body|content-body|article-content|main-content|post-entry")})
+        container = article if article else soup
+        
+        paragraphs = container.find_all("p")
+        lines = []
+        for p in paragraphs:
+            text = p.text.strip()
+            if text:
+                lines.append(text)
+        return lines
+
+    @classmethod
+    def parse_article_urls(cls, soup):
+        import urllib.parse
+        urls = []
+        domain = cls.get_newspaper_id().replace('-', '.')
+        for a in soup.find_all('a', href=True):
+            url = a.get('href')
+            if url.startswith('/'):
+                url = 'https://' + domain + url
+            elif not url.startswith('http'):
+                continue
+            
+            if domain in url:
+                lower_url = url.lower()
+                if any(x in lower_url for x in [
+                    '/tag/', '/category/', '/author/', '/contact', '/about', 
+                    '/terms', '/privacy', '/search', 'wp-login', '/feed', '/rss'
+                ]):
+                    continue
+                path = url.split('/')[-1]
+                if not path or path == '':
+                    continue
+                urls.append(url)
+        return list(set(urls))
 
     @classmethod
     def gen_article_urls(cls) -> Generator[str, None, None]:
