@@ -96,12 +96,11 @@ NEWSPAPERS = [
 
 # List of offline/timeout domains to move to the fallback folder
 OFFLINE_CLASSES = {
-    "ArmyLk", "EnglishLankaviewsCom", "EuthayanCom", "LankanewspapersCom", "LankapuvathLk",
-    "LankasrinewsCom", "LankatnewsCom", "LmdLk", "MawbimaLk", "NeruppuCom", "NewsradioLk",
+    "ArmyLk", "EnglishLankaviewsCom", "EuthayanCom",
+    "LankasrinewsCom", "LmdLk", "MawbimaLk", "NeruppuCom", "NewsradioLk",
     "RedfmLk", "RiviraLk", "RupavahiniLk", "SannasaNet", "SarasaviyaLk", "SathhandaLk",
-    "ShaafmLk", "ShakthifmCom", "SiluminaLk", "SirasatvLk", "SithafmLk", "SiyathafmLk",
-    "SiyathanewsLk", "SlbcLk", "SlguardianOrg", "SooriyanfmLk", "SrilankamirrorCom",
-    "SundayobserverLk", "SundaytimesLk", "SunfmLk", "SwarnavahiniLk", "TamilMirrorLk",
+    "SithafmLk", "SiyathafmLk",
+    "SlbcLk", "SlguardianOrg", "SooriyanfmLk", "SrilankamirrorCom",
     "TamilnetCom", "TheleaderLk", "ThemorningLk", "TheneeCom", "ThesamnetCoUk",
     "ThinakaranLk", "ThinakkuralLk", "TnlrocksCom", "VfmLk", "VikalpaOrg", "VimasumaCom",
     "VirakesariLk", "VivalankaCom", "YesfmonlineCom", "YfmLk", "YoutubeCom"

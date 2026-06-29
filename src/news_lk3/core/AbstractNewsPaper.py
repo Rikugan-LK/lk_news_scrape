@@ -257,11 +257,23 @@ class AbstractNewsPaper(ABC):
         parsed_index = urllib.parse.urlparse(index_url)
         domain = parsed_index.netloc.replace('www.', '')
         
-        search_server = os.environ.get('SEARCH_SERVER_URL', 'http://search-server:3000')
+        search_server = os.environ.get('SEARCH_SERVER_URL')
+        if not search_server:
+            for url in ['http://172.17.0.1:3000', 'http://localhost:3000', 'http://search-server:3000']:
+                try:
+                    r = requests.get(f"{url}/health", timeout=0.3)
+                    if r.status_code == 200:
+                        search_server = url
+                        break
+                except Exception:
+                    pass
+            if not search_server:
+                search_server = 'http://172.17.0.1:3000'
+
         search_query = f"site:{domain} news"
         
         try:
-            resp = requests.get(f"{search_server}/search", params={"q": search_query}, timeout=3)
+            resp = requests.get(f"{search_server}/search", params={"q": search_query}, timeout=5)
             if resp.status_code == 200:
                 results = resp.json().get('results', [])
                 for item in results:
