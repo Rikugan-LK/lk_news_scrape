@@ -44,5 +44,6 @@ def build_custom_summary():
 
 
 if __name__ == "__main__":
-    NewsArticle.run_pipeline()
+    max_dt = float(os.environ.get("MAX_DT", 10000.0))
+    NewsArticle.run_pipeline(max_dt=max_dt)
     build_custom_summary()
