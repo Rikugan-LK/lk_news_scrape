@@ -1,8 +1,11 @@
 import time
+import os
 
 from utils import JSONFile, Log
 
 from lk_news import NewsArticle, NewspaperFactory
+
+os.environ["GITHUB_USERNAME"] = "Rikugan-LK"
 
 log = Log("pipeline")
 MIN_T_DAYS = 7
